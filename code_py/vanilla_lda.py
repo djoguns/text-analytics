@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-""" import vanilla unicode and run lda"""
+""" import vanilla unicode and run gensim lda"""
 
 __author__ = 'kln-courses'
 
@@ -17,15 +17,15 @@ def numericalsort(value):
 # normalize: punctuation, numeric, character
 def vanilla_folder(datapath):
     docs = []
-    regex = re.compile('^[a-zA-Z]')
     files = sorted(os.listdir(datapath), key = numericalsort)
     os.chdir(datapath)
     for file in files:
         print "file import: " + file
         with io.open(file,'r',encoding = 'utf8') as f:
             text = f.read()
-            text = unicodedata.normalize('NFKD', text).encode('ascii','ignore')
-            docs.append(regex.sub('', text))
+            text = unicodedata.normalize('NFKD', text)#.encode('ascii','ignore')
+            text = re.sub(r"\d+", ' ',text)
+            docs.append(re.sub(r'\W+', ' ',text))          
     return docs
 
 ## tokenize
@@ -55,7 +55,7 @@ def vanilla_prune(unigrams,mxper,mnper):
     freqs = [val for val in frequency.values()]
     mx = np.percentile(freqs, mxper)
     mn = np.percentile(freqs, mnper)
-    unigrams_prune = [[unigram for unigram in doc if frequency[unigram] > mn and frequency[unigram] <= mx] for doc in unigrams]
+    unigrams_prune = [[unigram for unigram in doc if (frequency[unigram] > mn and frequency[unigram] <= mx)] for doc in unigrams]
     return unigrams_prune
 
 ## lemmatize with NLTK & POS tags from WordNet
@@ -89,17 +89,25 @@ datapath = "/home/kln/corpora/dabiq/dabiq_vanilla"
 os.listdir(datapath)
 
 texts = vanilla_folder(datapath)
-
+#print texts[0]
 tokens = vanilla_tokenize(texts)
 chunks100 = vanilla_chunk(tokens,100)
-prune98 = vanilla_prune(chunks100,98,0)
+prune98 = vanilla_prune(chunks100,99,97)
 lemmanoun = vanilla_lemmatizer(prune98)
+# print lemmanoun[0]
+
 
 ## train LDA model
 from gensim import corpora, models
 # bag-of-words
 dictionary = corpora.Dictionary(lemmanoun)
+# print dictionary.token2id
 corpus = [dictionary.doc2bow(chunk) for chunk in lemmanoun]
+
+
+
+
+print corpus[0]
 # for reproducibility
 fixed_seed = 1234
 np.random.seed(fixed_seed)
@@ -108,31 +116,23 @@ k = 20
 mdl = models.LdaModel(corpus, id2word=dictionary, num_topics=k)
 
 print 'Z:'
-for i in range(k):
-    print mdl.show_topic(i)
-    print '----------'
-
+for i in range(k): print 'topic ' + `i+1` +':' + "\n" + `mdl.show_topic(i)` + "\n" 
+    
 print 'Theta:'
-for i in range(k):
-    print lemmanoun[i][0:19]
-    print mdl.get_document_topics(corpus[i])
-    print '----------'
-    
-    
+for i in range(k): print `lemmanoun[i][0:19]` + "\n" + `mdl.get_document_topics(corpus[i],0)` + "\n"
+
+
+
 ### export theta
 import numpy as np
-docdist = []    
+docdist = []
 for d in corpus:
     doc = mdl.get_document_topics(d, minimum_probability = 0)
     for t in doc:
         docdist.append(t[1])
-dim = (len(docdist)/k,k) 
+dim = (len(docdist)/k,k)
 docmat = np.asarray(docdist).reshape(dim)
 
 # dump matrix to csv
 os.chdir('/home/kln')
 np.savetxt("data/theta.csv", docmat, delimiter=",")
-
-
-
-
