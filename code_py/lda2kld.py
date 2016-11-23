@@ -34,8 +34,8 @@ kld_smooth = movavg(kld-np.mean(kld), n=100)
 
 
 plt.figure(1)
-line = plt.plot(kld_smooth)
-plt.setp(line, 'color', 'r', 'linewidth', 2.0)
+h = plt.plot(kld_smooth)
+plt.setp(h, 'color', 'r', 'linewidth', 2.0)
 plt.xlabel('Time Index')
 plt.ylabel('Bits')
 plt.axis([0, len(kld_smooth),min(kld_smooth)*1.1,max((kld_smooth))*1.1])
