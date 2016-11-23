@@ -113,6 +113,8 @@ np.random.seed(fixed_seed)
 # train model on k topics
 k = 20
 mdl = models.LdaModel(corpus, id2word=dictionary, num_topics=k)
+#mdl = models.LdaModel(corpus, id2word=dictionary, num_topics=k, chunksize=3125, \
+#                      passes=25, update_every=0, alpha=None, eta=None, decay=0.5, distributed=False)
 
 print 'Z:'
 for i in range(k): print 'topic ' + `i+1` +':' + "\n" + `mdl.show_topic(i)` + "\n" 
