@@ -107,7 +107,6 @@ corpus = [dictionary.doc2bow(chunk) for chunk in lemmanoun]
 
 
 
-print corpus[0]
 # for reproducibility
 fixed_seed = 1234
 np.random.seed(fixed_seed)
